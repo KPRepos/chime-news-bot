@@ -10,7 +10,7 @@ def lambda_handler(event, context):
         if record['eventName'] == 'INSERT':
             item = record['dynamodb']['NewImage']
 
-            print(item)
+            print('New Item Detected: {} '.format(item))
 
             payload = {
                 'Content': '{} {}\n{}\n{}'.format(item['feed']['M']['icon']['S'], item['feed']['M']['title']['S'], item['name']['S'], item['link']['S'])
