@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'nike-news-feed
+
+  Posts relevant NIKE News to a Chat Channel
+
+  '
+Globals:
+  Function:
+    Timeout: 120
+Outputs:
+  GetItemsFunction:
+    Description: Hello World Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - GetItemsFunction
+      - Arn
+  GetItemsFunctionIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value:
+      Fn::GetAtt:
+      - GetItemsFunctionRole
+      - Arn
+Resources:
+  CheckFeedsSchedule:
+    Properties:
+      Description: 'Scheduled rule to check feeds
+
+        '
+      ScheduleExpression: rate(5 minutes)
+      State: ENABLED
+      Targets:
+      - Arn:
+          Fn::Sub: ${GetItemsFunction.Arn}
+        Id: CheckFeedsSchedule
+    Type: AWS::Events::Rule
+  CheckFeedsSchedulePermissiobn:
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::Sub: ${GetItemsFunction.Arn}
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::Sub: ${CheckFeedsSchedule.Arn}
+    Type: AWS::Lambda::Permission
+  FeedsTable:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: name
+        AttributeType: S
+      KeySchema:
+      - AttributeName: name
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    Type: AWS::DynamoDB::Table
+  GetItemsFunction:
+    Properties:
+      CodeUri: s3://shhorsfi-sam-deploy/3a46926d437b781ade4bc1d6d2051263
+      Environment:
+        Variables:
+          FEEDS_TABLE:
+            Ref: FeedsTable
+          ITEMS_TABLE:
+            Ref: ItemsTable
+      Handler: app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: FeedsTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ItemsTable
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+  ItemsTable:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+    Type: AWS::DynamoDB::Table
+  PostItemsFunction:
+    Properties:
+      CodeUri: s3://shhorsfi-sam-deploy/ae0698a50277f1d7aa62dcd07c73f946
+      Environment:
+        Variables:
+          CHIME_WEBHOOK: https://hooks.chime.aws/incomingwebhooks/3a360fd3-83fc-4440-8953-9d833308efa6?token=ek9xbHducVl8MXxJUzdHWmRqMF9WX2VRUW8tUXJ5VDJfSGI1NHF3emxUU2RXOEV6U0Z5akp3
+      Events:
+        DynamoDB1:
+          Properties:
+            BatchSize: 1
+            StartingPosition: TRIM_HORIZON
+            Stream:
+              Fn::GetAtt:
+              - ItemsTable
+              - StreamArn
+          Type: DynamoDB
+      Handler: app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ItemsTable
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31

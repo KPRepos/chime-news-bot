@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  nike-news-feed
+
+  Posts relevant NIKE News to a Chat Channel
+
+Globals:
+  Function:
+    Timeout: 120
+
+Resources:
+  # Get Items From Feeds
+  GetItemsFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: get_items/
+      Handler: app.lambda_handler
+      Runtime: python3.6
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FeedsTable
+        - DynamoDBCrudPolicy:    
+            TableName: !Ref ItemsTable
+      Environment:
+        Variables:
+          FEEDS_TABLE: !Ref FeedsTable
+          ITEMS_TABLE: !Ref ItemsTable
+
+  PostItemsFunction:
+    # Post Items To WebHook
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: post_items/
+      Handler: app.lambda_handler
+      Runtime: python3.6
+      Policies:
+        - DynamoDBCrudPolicy:    
+            TableName: !Ref ItemsTable      
+      Environment:
+        Variables:
+          CHIME_WEBHOOK: 'https://hooks.chime.aws/incomingwebhooks/3a360fd3-83fc-4440-8953-9d833308efa6?token=ek9xbHducVl8MXxJUzdHWmRqMF9WX2VRUW8tUXJ5VDJfSGI1NHF3emxUU2RXOEV6U0Z5akp3'
+      Events:
+        DynamoDB1:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              'Fn::GetAtt':
+                - ItemsTable
+                - StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+
+  FeedsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: name
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ItemsTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  CheckFeedsSchedule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: >
+        Scheduled rule to check feeds
+      ScheduleExpression: rate(5 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !Sub ${GetItemsFunction.Arn}
+          Id: CheckFeedsSchedule
+
+  CheckFeedsSchedulePermissiobn:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Sub ${GetItemsFunction.Arn}
+      Principal: 'events.amazonaws.com'
+      SourceArn: !Sub ${CheckFeedsSchedule.Arn}
+
+Outputs:
+  GetItemsFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt GetItemsFunction.Arn
+  GetItemsFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt GetItemsFunctionRole.Arn
