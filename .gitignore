@@ -249,3 +249,5 @@ node_modules
 deploy-prod.sh
 deploy-test.sh
 feed-test.py
+packaged-test.yaml
+packaged-prod.yaml
