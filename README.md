@@ -32,6 +32,12 @@ feeds_to_load = [
 
 ## Deploy
 
+### Install SAM CLI
+
+Install the AWS Serverless Application Model CLI - https://aws.amazon.com/serverless/sam/
+Configure your local AWS Credentials (aws configure).
+Create an S3 bucket to store the packaged code and replace S3_BUCKET_TO_STAGE_CODE with the name of your bucket in the comamands below.
+
 ### Build
 
 ```
