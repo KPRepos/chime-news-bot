@@ -63,4 +63,4 @@ sam deploy \
 
 ### Post Deploy
 
-Update the Feeds DynamoDB table with the RSS feeds you want to monitor. The tables take two fields, name and icon where icon is a Chime emoticon, ie: :shoe:
+Update the Feeds DynamoDB table with the RSS feeds you want to monitor. Follow the pattern of the default item, which can be deleted if needed.
