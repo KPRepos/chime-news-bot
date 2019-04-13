@@ -1,22 +1,31 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  nike-news-feed
+  chime-news-feed
 
-  Posts relevant NIKE News to a Chat Channel
+  Posts RSS feeds to a Chime Channel via a WebHook
+
+Parameters:
+    ChimeWebHookURL:
+        Description: Chime Webhook URL for Sending Events.
+        Type: String
+    FeedsCheckScheduleExpression:
+        Description: Rate To Check RSS Feeds for Data
+        Type: String
+        Default: rate(5 minutes)
 
 Globals:
   Function:
-    Timeout: 120
+    Timeout: 180
 
 Resources:
   # Get Items From Feeds
   GetItemsFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: get_items/
+      CodeUri: functions/get_items/
       Handler: app.lambda_handler
-      Runtime: python3.6
+      Runtime: python3.7
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FeedsTable
@@ -31,15 +40,15 @@ Resources:
     # Post Items To WebHook
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: post_items/
+      CodeUri: functions/post_items/
       Handler: app.lambda_handler
-      Runtime: python3.6
+      Runtime: python3.7
       Policies:
         - DynamoDBCrudPolicy:    
             TableName: !Ref ItemsTable      
       Environment:
         Variables:
-          CHIME_WEBHOOK: 'https://hooks.chime.aws/incomingwebhooks/3a360fd3-83fc-4440-8953-9d833308efa6?token=ek9xbHducVl8MXxJUzdHWmRqMF9WX2VRUW8tUXJ5VDJfSGI1NHF3emxUU2RXOEV6U0Z5akp3'
+          CHIME_WEBHOOK: !Ref ChimeWebHookURL
       Events:
         DynamoDB1:
           Type: DynamoDB
@@ -50,6 +59,41 @@ Resources:
                 - StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
+
+  # Load Feeds
+  LoadFeedsFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/load_feeds/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FeedsTable
+      Environment:
+        Variables:
+          FEEDS_TABLE: !Ref FeedsTable
+
+  LoadNewsFeedsCustomResource:
+    Type: Custom::LoadNewsFeedsCustomResource
+    Properties:
+      ServiceToken: !GetAtt LoadFeedsFunction.Arn
+
+  # Post Notifications
+  PostNotificationsFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/post_notifications/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          CHIME_WEBHOOK: !Ref ChimeWebHookURL
+
+  PostNotificationsCustomResource:
+    Type: Custom::PostNotificationsCustomResource
+    Properties:
+      ServiceToken: !GetAtt PostNotificationsFunction.Arn
 
   FeedsTable:
     Type: 'AWS::DynamoDB::Table'
@@ -84,7 +128,7 @@ Resources:
     Properties:
       Description: >
         Scheduled rule to check feeds
-      ScheduleExpression: rate(5 minutes)
+      ScheduleExpression: !Ref FeedsCheckScheduleExpression
       State: ENABLED
       Targets:
         - Arn: !Sub ${GetItemsFunction.Arn}
@@ -97,11 +141,3 @@ Resources:
       FunctionName: !Sub ${GetItemsFunction.Arn}
       Principal: 'events.amazonaws.com'
       SourceArn: !Sub ${CheckFeedsSchedule.Arn}
-
-Outputs:
-  GetItemsFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt GetItemsFunction.Arn
-  GetItemsFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt GetItemsFunctionRole.Arn

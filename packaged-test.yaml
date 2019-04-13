@@ -1,32 +1,28 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'nike-news-feed
+Description: 'chime-news-feed
 
-  Posts relevant NIKE News to a Chat Channel
+  Posts RSS feeds to a Chime Channel via a WebHook
 
   '
 Globals:
   Function:
-    Timeout: 120
-Outputs:
-  GetItemsFunction:
-    Description: Hello World Lambda Function ARN
-    Value:
-      Fn::GetAtt:
-      - GetItemsFunction
-      - Arn
-  GetItemsFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value:
-      Fn::GetAtt:
-      - GetItemsFunctionRole
-      - Arn
+    Timeout: 180
+Parameters:
+  ChimeWebHookURL:
+    Description: Chime Webhook URL for Sending Events.
+    Type: String
+  FeedsCheckScheduleExpression:
+    Default: rate(5 minutes)
+    Description: Rate To Check RSS Feeds for Data
+    Type: String
 Resources:
   CheckFeedsSchedule:
     Properties:
       Description: 'Scheduled rule to check feeds
 
         '
-      ScheduleExpression: rate(5 minutes)
+      ScheduleExpression:
+        Ref: FeedsCheckScheduleExpression
       State: ENABLED
       Targets:
       - Arn:
@@ -56,7 +52,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   GetItemsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/62c6b4b13bb2f332faedcb9a3560e516
+      CodeUri: s3://shhorsfi-sam-deploy/df50d4dd5aac4130af2b4749cd67a84d
       Environment:
         Variables:
           FEEDS_TABLE:
@@ -71,7 +67,7 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName:
             Ref: ItemsTable
-      Runtime: python3.6
+      Runtime: python3.7
     Type: AWS::Serverless::Function
   ItemsTable:
     Properties:
@@ -87,12 +83,34 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
     Type: AWS::DynamoDB::Table
-  PostItemsFunction:
+  LoadFeedsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/f608727bda8b3b0a803ead47c74178a5
+      CodeUri: s3://shhorsfi-sam-deploy/47ded9f7fb24dbac74770c4f410f96ed
       Environment:
         Variables:
-          CHIME_WEBHOOK: https://hooks.chime.aws/incomingwebhooks/3a360fd3-83fc-4440-8953-9d833308efa6?token=ek9xbHducVl8MXxJUzdHWmRqMF9WX2VRUW8tUXJ5VDJfSGI1NHF3emxUU2RXOEV6U0Z5akp3
+          FEEDS_TABLE:
+            Ref: FeedsTable
+      Handler: app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: FeedsTable
+      Runtime: python3.7
+    Type: AWS::Serverless::Function
+  LoadNewsFeedsCustomResource:
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - LoadFeedsFunction
+        - Arn
+    Type: Custom::LoadNewsFeedsCustomResource
+  PostItemsFunction:
+    Properties:
+      CodeUri: s3://shhorsfi-sam-deploy/b123869b07e96c2b2a1a05ff5b2a3278
+      Environment:
+        Variables:
+          CHIME_WEBHOOK:
+            Ref: ChimeWebHookURL
       Events:
         DynamoDB1:
           Properties:
@@ -108,6 +126,23 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName:
             Ref: ItemsTable
-      Runtime: python3.6
+      Runtime: python3.7
+    Type: AWS::Serverless::Function
+  PostNotificationsCustomResource:
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - PostNotificationsFunction
+        - Arn
+    Type: Custom::PostNotificationsCustomResource
+  PostNotificationsFunction:
+    Properties:
+      CodeUri: s3://shhorsfi-sam-deploy/f63ea76536dc1122468bbb25af252bcc
+      Environment:
+        Variables:
+          CHIME_WEBHOOK:
+            Ref: ChimeWebHookURL
+      Handler: app.lambda_handler
+      Runtime: python3.7
     Type: AWS::Serverless::Function
 Transform: AWS::Serverless-2016-10-31

@@ -4,9 +4,12 @@ import boto3
 import os
 import re
 
+feeds_table = boto3.resource('dynamodb').Table(os.environ['FEEDS_TABLE'])
+items_table = boto3.resource('dynamodb').Table(os.environ['ITEMS_TABLE'])
+
+
 def lambda_handler(event, context):
-    feeds_table = boto3.resource('dynamodb').Table(os.environ['FEEDS_TABLE'])
-    items_table = boto3.resource('dynamodb').Table(os.environ['ITEMS_TABLE'])
+    print(event)
 
     response = feeds_table.scan()
     feeds = response['Items']
@@ -14,6 +17,8 @@ def lambda_handler(event, context):
     for url in feeds:
         print('Parsing Articles From: {}'.format(url))
         feed_data = feedparser.parse(url['name'])
+
+        print(feed_data)
         
         for entry in feed_data['entries']:
             print('Inserting Article: {}'.format(entry['title']))

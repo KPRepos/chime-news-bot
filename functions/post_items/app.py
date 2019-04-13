@@ -6,6 +6,7 @@ import time
 webhook = os.environ['CHIME_WEBHOOK']
 
 def lambda_handler(event, context):
+    print(event)
     for record in event['Records']:
         if record['eventName'] == 'INSERT':
             item = record['dynamodb']['NewImage']
