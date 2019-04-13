@@ -1,9 +1,6 @@
 # chime-news-bot
 
-Posts items from RSS feeds to a Chime chat channel
-
 ![Alt text](docs/diagram.png?raw=true "Diagram")
-
 
 ## Overview
 
@@ -15,6 +12,7 @@ This solution deploys a simple serverless process for getting articles from RSS 
 2. Add Sentiment/Key Phrase Detection.
 3. Daily Roll-Up of Activity.
 4. Notification Improvements (New Versions, New Feeds, Etc)
+5. Better handling of feeds to load when deployed (config file perhaps).
 
 ## Prerequisites
 
