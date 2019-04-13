@@ -2,6 +2,20 @@
 
 Posts items from RSS feeds to a Chime chat channel
 
+![Alt text](docs/diagram.png?raw=true "Diagram")
+
+
+## Overview
+
+This solution deploys a simple serverless process for getting articles from RSS feeds and posting them to an Amazon Chime chat channel using a web hook.
+
+### Planned Improvements
+
+1. Break GetItems Function into State Machine (AWS Step Functions).
+2. Add Sentiment/Key Phrase Detection.
+3. Daily Roll-Up of Activity.
+4. Notification Improvements (New Versions, New Feeds, Etc)
+
 ## Prerequisites
 
 ### Create Chime Room and WebHook
