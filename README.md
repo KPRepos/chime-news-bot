@@ -1,10 +1,12 @@
-# chime-news-feed
+# chime-news-bot
 
-Posts relevant news to a Chime chat channel
+Posts items from RSS feeds to a Chime chat channel
 
 ## Prerequisites
 
 ### Create Chime Room and WebHook
+
+https://docs.aws.amazon.com/chime/latest/ug/webhooks.html
 
 ### Update Feeds to Load
 
@@ -15,11 +17,13 @@ NOTE: You can also directly update the Feeds DynamoDB table after deployment to 
 ```
 feeds_to_load = [
     {
-        'name': 'http://aws.amazon.com/new/feed/',
+        'title': 'AWS Updates',
+        'url': 'http://aws.amazon.com/new/feed/',
         'icon': ':cloud:'
     },
     {
-        'name': 'url',
+        'title': title,  # Feed Title Displayed in Chat
+        'url': 'url',    # URL of RSS Feed (Only RSSV2 Currently Supported)
         'icon': ':icon:' # Corresponds to Chime Emoticons
     },
     # More Feeds Below Here
@@ -45,6 +49,8 @@ sam package \
 ```
 
 ### Deploy
+
+Replace [YOUR_WEBHOOK_URL] with the webhook you created for your Chime chat room.
 
 ```
 sam deploy \

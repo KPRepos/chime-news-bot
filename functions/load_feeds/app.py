@@ -6,7 +6,8 @@ feeds_table = boto3.resource('dynamodb').Table(os.environ['FEEDS_TABLE'])
 
 feeds_to_load = [
     {
-        'name': 'http://aws.amazon.com/new/feed/',
+        'title': 'AWS Updates',
+        'url': 'http://aws.amazon.com/new/feed/',
         'icon': ':cloud:'
     }
 ]

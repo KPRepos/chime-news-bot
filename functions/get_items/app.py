@@ -3,10 +3,10 @@ import feedparser
 import boto3
 import os
 import re
+import urllib
 
 feeds_table = boto3.resource('dynamodb').Table(os.environ['FEEDS_TABLE'])
 items_table = boto3.resource('dynamodb').Table(os.environ['ITEMS_TABLE'])
-
 
 def lambda_handler(event, context):
     print(event)
@@ -14,24 +14,27 @@ def lambda_handler(event, context):
     response = feeds_table.scan()
     feeds = response['Items']
 
-    for url in feeds:
-        print('Parsing Articles From: {}'.format(url))
-        feed_data = feedparser.parse(url['name'])
+    for feed in feeds:
+        print('Parsing Articles From: {}'.format(feed))
+        feed_data = feedparser.parse(feed['url'])
 
-        print(feed_data)
+        print(feed_data.version)
         
-        for entry in feed_data['entries']:
-            print('Inserting Article: {}'.format(entry['title']))
+        if feed_data.version == 'rss20':
+            for entry in feed_data.entries:
+                print('Inserting Article: {}'.format(entry.title))
 
-            data = {
-                'id': entry['title'],
-                'name': re.sub('<[^<]+?>', '', entry['title']),
-                'link': entry['link'],
-                'feed': {
-                    'title': feed_data['feed']['title'],
-                    'icon': url['icon']             
+                data = {
+                    'id': entry.link,
+                    'name': re.sub('<[^<]+?>', '', urllib.parse.unquote(entry.title)),
+                    'link': entry.link,
+                    'feed': {
+                        'title': feed['title'],
+                        'icon': feed['icon']             
+                    }
                 }
-            }
 
-            response = items_table.put_item(Item=data)
-            print(response)
+                response = items_table.put_item(Item=data)
+                print(response)                
+        else:
+            print('Feed Version Not Supported: {}'.format(feed_data.version))

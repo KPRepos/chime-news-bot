@@ -99,10 +99,10 @@ Resources:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       AttributeDefinitions:
-        - AttributeName: name
+        - AttributeName: title
           AttributeType: S
       KeySchema:
-        - AttributeName: name
+        - AttributeName: title
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5

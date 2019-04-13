@@ -12,15 +12,15 @@ def send_notification(action):
 
     if action == 'Create':
         payload = {
-            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','Bot Created')
+            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','News Bot Created')
         }
     elif action == 'Update':
         payload = {
-            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','Bot Updated')
+            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','News Bot Updated')
         }   
     elif action =='Delete':
         payload = {
-            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','Bot Removed')
+            'Content': '{} {}\n{}'.format(':mailbox:', 'Bot Notification','News Bot Removed')
         }
 
     response = requests.post(webhook, data=json.dumps(payload))

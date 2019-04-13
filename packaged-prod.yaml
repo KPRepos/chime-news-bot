@@ -52,7 +52,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   GetItemsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/b3863d31e07b64fd3147531af5bcdcab
+      CodeUri: s3://shhorsfi-sam-deploy/1062bdb6b85d10f4bd6217f3fde6bf31
       Environment:
         Variables:
           FEEDS_TABLE:
@@ -85,7 +85,7 @@ Resources:
     Type: AWS::DynamoDB::Table
   LoadFeedsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/85fd739877abc3caaf1390b1e6d8c356
+      CodeUri: s3://shhorsfi-sam-deploy/a3a3fe994ae706abd93a5aa3a1fd28d4
       Environment:
         Variables:
           FEEDS_TABLE:
@@ -106,7 +106,7 @@ Resources:
     Type: Custom::LoadNewsFeedsCustomResource
   PostItemsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/43cf1ea9bdafb59722d6271056935a3d
+      CodeUri: s3://shhorsfi-sam-deploy/914af1dcbbd28aa2f7e36873fa6a8da0
       Environment:
         Variables:
           CHIME_WEBHOOK:
@@ -137,7 +137,7 @@ Resources:
     Type: Custom::PostNotificationsCustomResource
   PostNotificationsFunction:
     Properties:
-      CodeUri: s3://shhorsfi-sam-deploy/b5e2d7ae9672f29c048d61f76a5138b8
+      CodeUri: s3://shhorsfi-sam-deploy/49e8f051b26d9746379c014c1588357e
       Environment:
         Variables:
           CHIME_WEBHOOK:
